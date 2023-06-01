@@ -15,21 +15,24 @@
   
   // set up tainted Variable and tainted Storage index
   .decl TaintVariable(func: Function, source: Variable, var: Variable)
-  .decl TaintSink(func: Function, source: Variable, index: Variable)
+  .decl TaintSink(name: symbol, source: number, index: StorageIndex)
   
   // set up transfer function based on GlobalFlowAnalysis
-  TaintVariable(func, source, var) :-
+  TaintVariable(func, source, toVar) :-
     TaintSource(func, source), 
-    Flows(source, var).
-  TaintVariable(func, source, tovar) :-
+    Flows(source, toVar).
+  TaintVariable(func, source, toVar) :-
     TaintVariable(func, source, fromvar),
-    Flows(fromvar, tovar).
+    Flows(fromvar, toVar).
   
   // set up taint sink if it is a storage variable
-  TaintSink(func, source, index) :- 
+  TaintSink(name, n, index) :- 
     TaintVariable(func, source, var),
     Uses(stmt, var),
-    StorageAccessOp(stmt, index).
+    StorageAccessOp(stmt, varIndex),
+    Variable_StorageIndex(varIndex, index),
+    PublicFunctionArg(func, source, n),
+    HighLevelFunctionName(func, name).
 }
 
 .init taintflow = FuncParaTaintFlowAnalysis
