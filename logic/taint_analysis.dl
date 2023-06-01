@@ -33,5 +33,5 @@
 }
 
 .init taintflow = FuncParaTaintFlowAnalysis
-taintflow.TaintSource(func, source) :- FormalArgs(func, source, _).
+taintflow.TaintSource(func, source) :- PublicFunctionArg(func, source, _).
 .output taintflow.TaintSink
