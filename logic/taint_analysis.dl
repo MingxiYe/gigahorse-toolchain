@@ -1,0 +1,37 @@
+#include "../clientlib/function_inliner.dl"
+#include "../clientlib/storage_modeling/storage_modeling.dl"
+
+// **
+//  * custom data flow analysis
+//  **
+.comp FuncParaTaintFlowAnalysis : GlobalFlowAnalysis{
+  // set up GlobalFlowAnalysis relation
+  TransferStmt(stmt) :- FlowOp(op), Statement_Opcode(stmt, op).
+  TransferBoundary(b) :- IsBlock(b).
+
+  // input taint sources
+  .decl TaintSource(func: Function, source: Variable)
+  InitialFlowVar(x) :- TaintSource(_, x).
+  
+  // set up tainted Variable and tainted Storage index
+  .decl TaintVariable(func: Function, source: Variable, var: Variable)
+  .decl TaintSink(func: Function, source: Variable, index: Variable)
+  
+  // set up transfer function based on GlobalFlowAnalysis
+  TaintVariable(func, source, var) :-
+    TaintSource(func, source), 
+    Flows(source, var).
+  TaintVariable(func, source, tovar) :-
+    TaintVariable(func, source, fromvar),
+    Flows(fromvar, tovar).
+  
+  // set up taint sink if it is a storage variable
+  TaintSink(func, source, index) :- 
+    TaintVariable(func, source, var),
+    Uses(stmt, var),
+    StorageAccessOp(stmt, index).
+}
+
+.init taintflow = FuncParaTaintFlowAnalysis
+taintflow.TaintSource(func, source) :- FormalArgs(func, source, _).
+.output taintflow.TaintSink
