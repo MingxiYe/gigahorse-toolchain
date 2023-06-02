@@ -215,7 +215,7 @@ DEBUG_OUTPUT(PublicFunctionId)
   __Note:__ Only for internal calls
 */
 .decl ActualArgs(caller: Block, a: Variable, pos: number)
-
+.output ActualArgs
 ActualArgs(caller, a, pos - 1) :-
    Statement_Uses(s, a, pos),
    CALLPRIVATE(s, _),
@@ -248,6 +248,8 @@ FormalReturnArgs(fn, a, pos - 1) :-
 .decl FormalArgs(fn: Function, a: Variable, pos: number)
 .input FormalArgs(IO="file", filename="FormalArgs.csv", delimiter="\t")
 
+.decl NewFormalArgs(fn: Function, a: Variable, pos: number)
+.input NewFormalArgs(IO="file", filename="NewFormalArgs.csv", delimiter="\t")
 
 .decl Statement_Uses(stmt: Statement, var: Variable, i: number)
 .input Statement_Uses(IO="file", filename="TAC_Use.csv", delimiter="\t")

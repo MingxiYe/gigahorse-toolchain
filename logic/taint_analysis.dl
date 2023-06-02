@@ -1,6 +1,7 @@
 #include "../clientlib/function_inliner.dl"
 #include "../clientlib/storage_modeling/storage_modeling.dl"
 
+#include "context-sensitivity/context_sensitivity.dl"
 // **
 //  * custom data flow analysis
 //  **
@@ -8,7 +9,46 @@
   // set up GlobalFlowAnalysis relation
   TransferStmt(stmt) :- FlowOp(op), Statement_Opcode(stmt, op).
   TransferBoundary(b) :- IsBlock(b).
+  
+  InterFunctionActualArgFlow(actual, inFunctionVar):-
+    ActualArgs(caller, actual, n),
+    TransferBoundary(caller),
+    CallGraphEdge(caller, fn),
+    NewFormalArgs(fn, formal, n),
+    Uses(stmt, formal),
+    Defines(stmt, inFunctionVar).
 
+  GlobalFlows(x, y) :-
+    GlobalFlows(_, x),
+    Uses(stmt, x),
+    Defines(stmt, y),
+    TransferStmt(stmt),
+    Statement_Block(stmt, block),
+    TransferBoundary(block).
+
+  // Case: Flows from formal to formal return
+  GlobalFlows(actual, actualReturn) :-
+    FunctionFlowSummary(fn, formal, m),
+    FunctionCallReturn(block, fn, _),
+    FormalArgs(fn, formal, n),
+    ActualArgs(block, actual, n),
+    ActualReturnArgs(block, actualReturn, m),
+    TransferBoundary(block).
+
+  // Case: Flows from local variable to formal return
+  GlobalFlows(variable, actualReturn) :-
+    FunctionFlowSummary(fn, variable, m),
+    FunctionCallReturn(block, fn, _),
+    !FormalArgs(fn, variable, _),
+    ActualReturnArgs(block, actualReturn, m),
+    TransferBoundary(block).
+
+  // Recursive Case
+  GlobalFlows(x, z) :-
+    GlobalFlows(x, y),
+    GlobalFlows(y, z).
+    .plan 1:(2,1)
+  
   // input taint sources
   .decl TaintSource(func: Function, source: Variable)
   InitialFlowVar(x) :- TaintSource(_, x).
@@ -20,10 +60,10 @@
   // set up transfer function based on GlobalFlowAnalysis
   TaintVariable(func, source, toVar) :-
     TaintSource(func, source), 
-    Flows(source, toVar).
+    GlobalFlows(source, toVar).
   TaintVariable(func, source, toVar) :-
     TaintVariable(func, source, fromvar),
-    Flows(fromvar, toVar).
+    GlobalFlows(fromvar, toVar).
   
   // set up taint sink if it is a storage variable
   TaintSink(name, n, index) :- 

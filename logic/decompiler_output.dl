@@ -254,6 +254,14 @@ FormalArgs(func, as(var_rep, TACVariable), n) :-
    FunctionArgument(func, n, var),
    Variable_String(var, var_rep).
 
+.decl NewFormalArgs(func:IRFunction, var:TACVariable, n:number)
+.output NewFormalArgs
+
+NewFormalArgs(func, tacVar, n) :-
+  FunctionArgument(func, n, var),
+  Variable_String(var, var_rep),
+  tacVar = as(var_rep, TACVariable).
+
 .decl ActualReturnArgs(caller:IRBlock, var_rep:symbol, n:number)
 .output ActualReturnArgs
 
